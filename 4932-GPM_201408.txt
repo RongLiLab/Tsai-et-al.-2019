@@ -1,15 +1,3 @@
-#id: 243
-#name: S.cerevisiae - Whole organism, SC (GPM,Aug,2014)
-#score: 22.88
-#weight: 90%
-#description: abundance based on Spectral counting, from<a href="http://www.thegpm.org/" target="_blank">GPM,Aug,2014</a><br/><b>Interaction consistency score</b>: 22.88&nbsp<b>Coverage</b>: 79
-#organ: WHOLE_ORGANISM
-#integrated: false
-#coverage: 79
-#publication_year: 2014
-#filename: 4932-GPM_201408.txt
-#
-#internal_id	string_external_id	abundance	raw_spectral_count
 633090	4932.YLR201C	10.9	294
 633742	4932.YMR188C	24.1	634
 632799	4932.YLL002W	17.4	767

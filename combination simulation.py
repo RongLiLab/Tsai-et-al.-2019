@@ -1,6 +1,14 @@
 from random import shuffle
 import numpy as np
 from matplotlib import pyplot as plt
+from pickle import load
+import random
+
+
+abundance_range, total_partners = load(open('data_stats_dump.dmp', 'r'))
+abundance_range = abundance_range[abundance_range > 1]
+
+abundance_range = np.random.permutation(abundance_range)
 
 
 def calculate_van_Hoeff(aneuploidy_factor, complex_size):
@@ -23,6 +31,30 @@ def calculate_van_Hoeff(aneuploidy_factor, complex_size):
     total_van_Hoeff = complex_counter + free_protein_counter
 
     return total_van_Hoeff
+
+
+def generate_complex_ids():
+    complex_contents = []
+    i = 0
+
+    while i < len(abundance_range):
+        current_complex_size = random.choice(total_partners+1)
+        complex = []
+        for j in range(i, i+current_complex_size):
+            complex.append(j)
+        print complex
+        complex_contents.append(complex)
+        i += current_complex_size
+
+    return complex_contents
+
+
+def calculate_free_mol_entities(aneuploidy_factor, complex_contents):
+    multiplication_factor = np.randint(1,2)
+
+
+
+    # we have formed stable complexes
 
 
 if __name__ == "__main__":
@@ -53,8 +85,10 @@ if __name__ == "__main__":
     plt.axis([1, 2, 0, 7000])
     plt.show()
 
-    plt.plot(base, np.sqrt(read_out))
+    plt.title('Cell size vs ploidy')
+    plt.plot(base, np.cbrt(read_out), label='simulation results')
+    plt.plot(base, np.cbrt(base*1000), label='linear volume incerease')
     plt.xlabel("ploidy")
     plt.ylabel("size")
-    plt.axis([1, 2, 0, 100])
+    plt.axis([1, 2, 5, 20])
     plt.show()
