@@ -50,7 +50,8 @@ def generate_complex_ids():
 
 
 def calculate_free_mol_entities(aneuploidy_factor, complex_contents):
-    multiplication_factor = np.randint(1,2)
+    multiplication_factor = np.random.binomial(1, 1+aneuploidy_factor, len(abundance_range))
+
 
 
 
