@@ -4,6 +4,8 @@ from matplotlib import pyplot as plt
 from collections import defaultdict
 from pickle import dump
 
+from scipy import stats
+
 abundance_range = []
 abundance_table = defaultdict(int)
 interaction_table = []
@@ -54,6 +56,13 @@ plt.show()
 
 plt.loglog(partner_abundances[:, 0], partner_abundances[:, 1], '.k')
 plt.show()
+
+slope, intercept, r_value, p_value, std_err = stats.linregress(partner_abundances[:, 0], partner_abundances[:, 1])
+print slope, intercept, r_value, p_value, std_err
+
+sel = np.logical_and(partner_abundances[:, 0] > 0, partner_abundances[:, 1] > 0)
+slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(partner_abundances[sel, 0]), np.log(partner_abundances[sel, 1]))
+print slope, intercept, r_value, p_value, std_err
 
 
 dump((abundance_range, total_partners), open('data_stats_dump.dmp', 'w'))

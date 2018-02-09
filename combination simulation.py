@@ -61,9 +61,23 @@ def generate_complex_ids():
     return complex_contents
 
 
-def calculate_free_mol_entities(aneuploidy_factor, complex_contents):
-    multiplication_factor = np.random.binomial(1, aneuploidy_factor, len(abundance_range))
-    aneup_abundance = abundance_range * multiplication_factor
+def align_complex_abundances(complex_contents, abundance_correlation=0.7):
+    aligned_abundances = np.copy(abundance_range)
+
+    for complex in complex_contents:
+        # print complex
+        # print aligned_abundances[complex]
+        average_abundance = np.mean(aligned_abundances[complex])
+        aligned_abundances[complex] = aligned_abundances[complex]*(1 - abundance_correlation) +\
+                                      average_abundance*abundance_correlation
+        # print aligned_abundances[complex]
+
+    return aligned_abundances
+
+
+def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances):
+    multiplication_factor = np.random.binomial(1, aneuploidy_factor, len(abundances))+1
+    aneup_abundance = abundances * multiplication_factor
 
     total_proteins = sum(aneup_abundance)
     total_complexes = 0
@@ -90,30 +104,28 @@ if __name__ == "__main__":
     print base
 
     complex_contents = generate_complex_ids()
+    aligned_abundances = align_complex_abundances(complex_contents, 0.2)
 
-    read_out = []
+    re_runs = []
 
-    for aneuploidy_factor in base:
-        # read_out.append(calculate_van_Hoeff(aneuploidy_factor, 6))
-        read_out.append(calculate_free_mol_entities(aneuploidy_factor, complex_contents))
+    for _ in range(0, 5):
+        read_out = []
 
-        print read_out[-1]
+        for aneuploidy_factor in base:
+            # read_out.append(calculate_van_Hoeff(aneuploidy_factor, 6))
+            read_out.append(calculate_free_mol_entities(aneuploidy_factor, complex_contents, aligned_abundances))
 
-    # base.insert(0, 0)
-    # base.append(1)
-    # read_out.insert(0, 0)
-    # read_out.append(1000)
+        read_out = np.array(read_out)
+        re_runs.append(read_out)
 
     base = np.array(base)
-    read_out = np.array(read_out)
 
     print base
-    print read_out
 
     base = base + 1
-    read_out = read_out
 
-    plt.plot(base, read_out)
+    for i in range(0, len(re_runs)):
+        plt.plot(base, re_runs[i])
     plt.xlabel("ploidy")
     plt.ylabel("pressure")
     # plt.axis([1, 2, 0, 7000])
