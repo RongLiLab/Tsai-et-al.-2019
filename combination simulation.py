@@ -8,6 +8,10 @@ random.seed(42)
 
 abundance_range, total_partners = load(open('data_stats_dump.dmp', 'r'))
 abundance_range = abundance_range[abundance_range > 1]
+total_partners = np.array(total_partners)
+total_partners = total_partners[total_partners > 3]
+total_partners = total_partners[total_partners < 42]
+total_partners = total_partners.tolist()
 
 print total_partners
 print np.any(np.array(total_partners) == 0)
@@ -102,9 +106,10 @@ if __name__ == "__main__":
 
     base = np.arange(0.00, 1.05, 0.05).tolist()
     print base
+    abundance_correlation = 0.7
 
     complex_contents = generate_complex_ids()
-    aligned_abundances = align_complex_abundances(complex_contents, 0.2)
+    aligned_abundances = align_complex_abundances(complex_contents, abundance_correlation)
 
     re_runs = []
 
@@ -119,22 +124,27 @@ if __name__ == "__main__":
         re_runs.append(read_out)
 
     base = np.array(base)
+    re_runs = np.array(re_runs)
+    means = np.mean(re_runs, 0)
+    stds = np.std(re_runs, 0)
 
-    print base
+    means, stds = (means/means[0], stds/means[0])
+    print means.shape
 
     base = base + 1
 
-    for i in range(0, len(re_runs)):
-        plt.plot(base, re_runs[i])
+    plt.title('Molecules abundance vs ploidy at complex memeber correlation of %s' % abundance_correlation)
+    plt.plot(base, base, 'ok')
+    plt.errorbar(base, means, yerr=stds, fmt='or')
     plt.xlabel("ploidy")
     plt.ylabel("pressure")
-    # plt.axis([1, 2, 0, 7000])
+    plt.axis([0.95, 2.05, 0.9, 3.2])
     plt.show()
 
-    plt.title('Cell size vs ploidy')
-    plt.plot(base, np.cbrt(read_out), label='simulation results')
-    # plt.plot(base, np.cbrt(base*1000), label='linear volume incerease')
+    plt.title('Cell size vs ploidy at complex memeber correlation of %s' % abundance_correlation)
+    plt.plot(base, np.cbrt(base), 'ok', label='euploidy linear interpolation')
+    plt.errorbar(base, np.cbrt(means), yerr=np.cbrt(means+stds)-np.cbrt(means-stds), fmt='or', label='simulation results')
     plt.xlabel("ploidy")
     plt.ylabel("size")
-    # plt.axis([1, 2, 5, 20])
+    plt.axis([0.95, 2.05, 0.9, 1.5])
     plt.show()
