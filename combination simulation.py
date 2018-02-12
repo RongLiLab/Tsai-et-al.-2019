@@ -9,14 +9,27 @@ random.seed(42)
 abundance_range, total_partners = load(open('data_stats_dump.dmp', 'r'))
 abundance_range = abundance_range[abundance_range > 1]
 total_partners = np.array(total_partners)
-total_partners = total_partners[total_partners > 3]
-total_partners = total_partners[total_partners < 42]
+total_partners = total_partners[total_partners > 1]
+total_partners = total_partners[total_partners < 45]
 total_partners = total_partners.tolist()
+
+
+plt.hist(total_partners)
+plt.show()
+
+total_partners = np.random.gamma(1.538, 2.016, len(total_partners))
+total_partners = np.ceil(total_partners).astype(np.int16)
+total_partners = total_partners[total_partners > 1]
+
+plt.hist(total_partners)
+plt.show()
 
 print total_partners
 print np.any(np.array(total_partners) == 0)
 
 abundance_range = np.random.permutation(abundance_range)
+
+#TODO: further improvement idea: use actual experimental data for protein perturbation by aneuploidy from Rancati
 
 
 def calculate_van_Hoeff(aneuploidy_factor, complex_size):
@@ -102,35 +115,40 @@ def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances)
     return total_molecules
 
 
-if __name__ == "__main__":
+def core_simulation_loop():
+    pass
 
-    base = np.arange(0.00, 1.05, 0.05).tolist()
-    print base
-    abundance_correlation = 0.7
 
+def core_sim_loop(base, abundance_correlation=0.7):
     complex_contents = generate_complex_ids()
     aligned_abundances = align_complex_abundances(complex_contents, abundance_correlation)
-
     re_runs = []
-
     for _ in range(0, 5):
         read_out = []
 
         for aneuploidy_factor in base:
             # read_out.append(calculate_van_Hoeff(aneuploidy_factor, 6))
-            read_out.append(calculate_free_mol_entities(aneuploidy_factor, complex_contents, aligned_abundances))
+            read_out.append(calculate_free_mol_entities(aneuploidy_factor, complex_contents,
+                                                        aligned_abundances))
 
         read_out = np.array(read_out)
         re_runs.append(read_out)
 
-    base = np.array(base)
     re_runs = np.array(re_runs)
     means = np.mean(re_runs, 0)
     stds = np.std(re_runs, 0)
+    means, stds = (means / means[0], stds / means[0])
 
-    means, stds = (means/means[0], stds/means[0])
-    print means.shape
+    return means, stds
 
+
+if __name__ == "__main__":
+
+    base = np.arange(0.00, 1.05, 0.05).tolist()
+    abundance_correlation = 0.7  # TODO: change starting from here
+    means, stds = core_sim_loop(base, 0.7)
+
+    base = np.array(base)
     base = base + 1
 
     plt.title('Molecules abundance vs ploidy at complex memeber correlation of %s' % abundance_correlation)
