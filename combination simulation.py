@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from pickle import load
 import random
+from matplotlib.cm import get_cmap
 
 random.seed(42)
 
@@ -145,24 +146,32 @@ def core_sim_loop(base, abundance_correlation=0.7):
 if __name__ == "__main__":
 
     base = np.arange(0.00, 1.05, 0.05).tolist()
-    abundance_correlation = 0.7  # TODO: change starting from here
-    means, stds = core_sim_loop(base, 0.7)
+    arr_base = np.array(base)
+    arr_base += 1
+    cmap = get_cmap('Reds')
 
-    base = np.array(base)
-    base = base + 1
+    plt.title('Molecules abundance vs ploidy vs abundance correlation')
+    # plt.plot(arr_base, arr_base, 'ok')
+    plt.plot(arr_base, np.cbrt(arr_base), '-k', label='0')
 
-    plt.title('Molecules abundance vs ploidy at complex memeber correlation of %s' % abundance_correlation)
-    plt.plot(base, base, 'ok')
-    plt.errorbar(base, means, yerr=stds, fmt='or')
+    for abundance_correlation in range(5, 10):
+        c = cmap(abundance_correlation*0.1)
+        means, stds = core_sim_loop(base, abundance_correlation*0.1)
+        # plt.errorbar(arr_base, means, yerr=stds, fmt='o', color=c, label=abundance_correlation*0.1)
+        plt.errorbar(arr_base, np.cbrt(means), yerr=np.cbrt(means+stds)-np.cbrt(means-stds), fmt='-', color=c, label=abundance_correlation*0.1)
+
     plt.xlabel("ploidy")
-    plt.ylabel("pressure")
-    plt.axis([0.95, 2.05, 0.9, 3.2])
-    plt.show()
-
-    plt.title('Cell size vs ploidy at complex memeber correlation of %s' % abundance_correlation)
-    plt.plot(base, np.cbrt(base), 'ok', label='euploidy linear interpolation')
-    plt.errorbar(base, np.cbrt(means), yerr=np.cbrt(means+stds)-np.cbrt(means-stds), fmt='or', label='simulation results')
-    plt.xlabel("ploidy")
+    # plt.ylabel("pressure")
     plt.ylabel("size")
+    plt.legend()
+    # plt.axis([0.95, 2.05, 0.9, 3.2])
     plt.axis([0.95, 2.05, 0.9, 1.5])
     plt.show()
+
+    # plt.title('Cell size vs ploidy at complex memeber correlation of %s' % abundance_correlation)
+    # plt.plot(base, np.cbrt(base), 'ok', label='euploidy linear interpolation')
+    # plt.errorbar(base, np.cbrt(means), yerr=np.cbrt(means+stds)-np.cbrt(means-stds), fmt='or', label='simulation results')
+    # plt.xlabel("ploidy")
+    # plt.ylabel("size")
+    # plt.axis([0.95, 2.05, 0.9, 1.5])
+    # plt.show()
