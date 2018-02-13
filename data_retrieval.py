@@ -9,6 +9,7 @@ from scipy import stats
 abundance_range = []
 abundance_table = defaultdict(int)
 interaction_table = []
+exp_ploid_vs_size = []
 
 
 with open('4932-GPM_201408.txt', 'r') as source:
@@ -28,6 +29,16 @@ with open('CervBinaryHQ.txt', 'r') as source:
         prot2 = line[1]
         interaction_table.append([prot1, prot2])
 
+
+with open('ploidy_size.csv', 'r') as source:
+    reader = csv_reader(source)
+    reader = reader.next()
+    for line in reader:
+        ploidy = line[1]
+        rel_radius = line[3]
+        exp_ploid_vs_size.append([ploidy, rel_radius])
+
+# TODO: finish from here
 
 interaction_table = np.array(interaction_table)
 total_partners = []

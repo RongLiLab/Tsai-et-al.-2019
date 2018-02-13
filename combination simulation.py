@@ -15,6 +15,7 @@ total_partners = total_partners[total_partners < 45]
 total_partners = total_partners.tolist()
 
 
+
 plt.hist(total_partners)
 plt.show()
 
@@ -120,11 +121,11 @@ def core_simulation_loop():
     pass
 
 
-def core_sim_loop(base, abundance_correlation=0.7):
+def core_sim_loop(base, abundance_correlation=0.7, repeats=5):
     complex_contents = generate_complex_ids()
     aligned_abundances = align_complex_abundances(complex_contents, abundance_correlation)
     re_runs = []
-    for _ in range(0, 5):
+    for _ in range(0, repeats):
         read_out = []
 
         for aneuploidy_factor in base:
@@ -156,14 +157,15 @@ if __name__ == "__main__":
 
     for abundance_correlation in range(5, 10):
         c = cmap(abundance_correlation*0.1)
-        means, stds = core_sim_loop(base, abundance_correlation*0.1)
+        means, stds = core_sim_loop(base, abundance_correlation*0.1, 10)
         # plt.errorbar(arr_base, means, yerr=stds, fmt='o', color=c, label=abundance_correlation*0.1)
-        plt.errorbar(arr_base, np.cbrt(means), yerr=np.cbrt(means+stds)-np.cbrt(means-stds), fmt='-', color=c, label=abundance_correlation*0.1)
+        plt.plot(arr_base, np.cbrt(means), color=c, label=abundance_correlation*0.1)
+        plt.fill_between(arr_base, np.cbrt(means-stds), np.cbrt(means+stds), color=c, alpha=.3)
 
     plt.xlabel("ploidy")
     # plt.ylabel("pressure")
     plt.ylabel("size")
-    plt.legend()
+    plt.legend(loc=8, ncol=3, title='complex member abundance correlation')
     # plt.axis([0.95, 2.05, 0.9, 3.2])
     plt.axis([0.95, 2.05, 0.9, 1.5])
     plt.show()
