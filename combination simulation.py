@@ -76,7 +76,8 @@ def generate_complex_ids():
     i = 0
     local_partners = (np.array(total_partners)+1).tolist()
 
-    while i < len(abundance_range)-45:  # -45 is here for manual abundant complex injection
+    # while i < len(abundance_range)-45:  # -45 is here for manual abundant complex injection
+    while i < len(abundance_range):
         current_complex_size = random.choice(local_partners)
         complex = []
         for j in range(i, i+current_complex_size):
@@ -92,8 +93,8 @@ def generate_complex_ids():
     else:
         complex_contents[-1] = last_complex
 
-    # Manual large, abundant complex injection:
-    complex_contents.append(range(complex_contents[-1][-1], len(abundance_range)))
+    # # Manual large, abundant complex injection:
+    # complex_contents.append(range(complex_contents[-1][-1], len(abundance_range)))
 
     return complex_contents
 
@@ -109,14 +110,14 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
                                       average_abundance*abundance_correlation
         # print aligned_abundances[complex]
 
-    # Manual large, abundant complex injection:
-    sorted_abundances = np.sort(abundance_range)
-    print sorted_abundances
-    print len(complex_contents[-1])
-    average_abundance = np.mean(sorted_abundances[complex_contents[-1]])
-    print average_abundance
-    aligned_abundances[complex_contents[-1]] = sorted_abundances[complex_contents[-1]]*(1-abundance_correlation) +\
-                                                average_abundance*abundance_correlation
+    # # Manual large, abundant complex injection:
+    # sorted_abundances = np.sort(abundance_range)
+    # print sorted_abundances
+    # print len(complex_contents[-1])
+    # average_abundance = np.mean(sorted_abundances[complex_contents[-1]])
+    # print average_abundance
+    # aligned_abundances[complex_contents[-1]] = sorted_abundances[complex_contents[-1]]*(1-abundance_correlation) +\
+    #                                             average_abundance*abundance_correlation
 
     return aligned_abundances
 
