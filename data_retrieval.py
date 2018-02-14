@@ -30,15 +30,15 @@ with open('CervBinaryHQ.txt', 'r') as source:
         interaction_table.append([prot1, prot2])
 
 
-with open('ploidy_size.csv', 'r') as source:
+with open('ploidy_size.csv', 'rb') as source:
     reader = csv_reader(source)
-    reader = reader.next()
+    reader.next()
     for line in reader:
+        # print line
         ploidy = line[1]
         rel_radius = line[3]
+        # print ploidy, rel_radius
         exp_ploid_vs_size.append([ploidy, rel_radius])
-
-# TODO: finish from here
 
 interaction_table = np.array(interaction_table)
 total_partners = []
@@ -58,15 +58,15 @@ abundance_range = np.array(abundance_range)
 log_range = np.log(abundance_range[abundance_range > 0])
 
 partner_abundances = np.array(partner_abundances)
-
-plt.hist(log_range, bins=50)
-plt.show()
-
-plt.hist(np.log(total_partners), bins=50)
-plt.show()
-
-plt.loglog(partner_abundances[:, 0], partner_abundances[:, 1], '.k')
-plt.show()
+#
+# plt.hist(log_range, bins=50)
+# plt.show()
+#
+# plt.hist(np.log(total_partners), bins=50)
+# plt.show()
+#
+# plt.loglog(partner_abundances[:, 0], partner_abundances[:, 1], '.k')
+# plt.show()
 
 slope, intercept, r_value, p_value, std_err = stats.linregress(partner_abundances[:, 0], partner_abundances[:, 1])
 print slope, intercept, r_value, p_value, std_err
@@ -75,5 +75,5 @@ sel = np.logical_and(partner_abundances[:, 0] > 0, partner_abundances[:, 1] > 0)
 slope, intercept, r_value, p_value, std_err = stats.linregress(np.log(partner_abundances[sel, 0]), np.log(partner_abundances[sel, 1]))
 print slope, intercept, r_value, p_value, std_err
 
-
+dump(exp_ploid_vs_size, open('ploidy_vs_size.dmp', 'w'))
 dump((abundance_range, total_partners), open('data_stats_dump.dmp', 'w'))

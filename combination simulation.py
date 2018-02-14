@@ -4,34 +4,49 @@ from matplotlib import pyplot as plt
 from pickle import load
 import random
 from matplotlib.cm import get_cmap
+from statsmodels.nonparametric.smoothers_lowess import lowess
+from scipy.stats import gaussian_kde
 
 random.seed(42)
 
 abundance_range, total_partners = load(open('data_stats_dump.dmp', 'r'))
+ploidy_vs_size = load(open('ploidy_vs_size.dmp'))
+
 abundance_range = abundance_range[abundance_range > 1]
 total_partners = np.array(total_partners)
 total_partners = total_partners[total_partners > 1]
 total_partners = total_partners[total_partners < 45]
 total_partners = total_partners.tolist()
+total_partners_old = total_partners
 
-
-
-plt.hist(total_partners)
-plt.show()
 
 total_partners = np.random.gamma(1.538, 2.016, len(total_partners))
 total_partners = np.ceil(total_partners).astype(np.int16)
 total_partners = total_partners[total_partners > 1]
+total_partners_new = total_partners
 
-plt.hist(total_partners)
+plt.title('Complex Size distribution')
+data = np.array(total_partners)
+density = gaussian_kde(data.flatten())
+xs = np.linspace(data.min(), data.max(), 50)
+plt.plot(xs, density(xs), 'k', label='gamma distro fitted to mean/std')
+
+data = np.array(total_partners_old)
+density = gaussian_kde(data.flatten())
+xs = np.linspace(data.min(), data.max(), 50)
+plt.plot(xs, density(xs), 'r', label='interaction partners proxy')
+
+plt.xlabel('complex size')
+plt.ylabel('distribution density')
+plt.legend()
 plt.show()
 
-print total_partners
+total_partners = total_partners_old
+
+# print total_partners
 print np.any(np.array(total_partners) == 0)
 
 abundance_range = np.random.permutation(abundance_range)
-
-#TODO: further improvement idea: use actual experimental data for protein perturbation by aneuploidy from Rancati
 
 
 def calculate_van_Hoeff(aneuploidy_factor, complex_size):
@@ -61,7 +76,7 @@ def generate_complex_ids():
     i = 0
     local_partners = (np.array(total_partners)+1).tolist()
 
-    while i < len(abundance_range):
+    while i < len(abundance_range)-45:  # -45 is here for manual abundant complex injection
         current_complex_size = random.choice(local_partners)
         complex = []
         for j in range(i, i+current_complex_size):
@@ -77,19 +92,31 @@ def generate_complex_ids():
     else:
         complex_contents[-1] = last_complex
 
+    # Manual large, abundant complex injection:
+    complex_contents.append(range(complex_contents[-1][-1], len(abundance_range)))
+
     return complex_contents
 
 
 def align_complex_abundances(complex_contents, abundance_correlation=0.7):
     aligned_abundances = np.copy(abundance_range)
 
-    for complex in complex_contents:
+    for complex in complex_contents[:-1]:
         # print complex
         # print aligned_abundances[complex]
         average_abundance = np.mean(aligned_abundances[complex])
         aligned_abundances[complex] = aligned_abundances[complex]*(1 - abundance_correlation) +\
                                       average_abundance*abundance_correlation
         # print aligned_abundances[complex]
+
+    # Manual large, abundant complex injection:
+    sorted_abundances = np.sort(abundance_range)
+    print sorted_abundances
+    print len(complex_contents[-1])
+    average_abundance = np.mean(sorted_abundances[complex_contents[-1]])
+    print average_abundance
+    aligned_abundances[complex_contents[-1]] = sorted_abundances[complex_contents[-1]]*(1-abundance_correlation) +\
+                                                average_abundance*abundance_correlation
 
     return aligned_abundances
 
@@ -146,6 +173,10 @@ def core_sim_loop(base, abundance_correlation=0.7, repeats=5):
 
 if __name__ == "__main__":
 
+    corrfactor = ploidy_vs_size[0, 1]
+    ploidy_vs_size[:, 1] /= corrfactor
+    ploidy_vs_size[:, 2] /= corrfactor
+
     base = np.arange(0.00, 1.05, 0.05).tolist()
     arr_base = np.array(base)
     arr_base += 1
@@ -154,20 +185,23 @@ if __name__ == "__main__":
     plt.title('Molecules abundance vs ploidy vs abundance correlation')
     # plt.plot(arr_base, arr_base, 'ok')
     plt.plot(arr_base, np.cbrt(arr_base), '-k', label='0')
+    # filtered = lowess(ploidy_vs_size[:, 1], ploidy_vs_size[:, 0], is_sorted=True, frac=0.05, it=0)
+    plt.errorbar(ploidy_vs_size[:, 0], ploidy_vs_size[:, 1], yerr=ploidy_vs_size[:, 2], fmt='or', label='exp')
+    # plt.plot(filtered[:, 1], filtered[:, 0], 'ob', label='exp')
 
-    for abundance_correlation in range(5, 10):
+    for abundance_correlation in range(5, 11):
         c = cmap(abundance_correlation*0.1)
         means, stds = core_sim_loop(base, abundance_correlation*0.1, 10)
         # plt.errorbar(arr_base, means, yerr=stds, fmt='o', color=c, label=abundance_correlation*0.1)
-        plt.plot(arr_base, np.cbrt(means), color=c, label=abundance_correlation*0.1)
+        plt.plot(arr_base, np.cbrt(means), color=c, label=abundance_correlation*10)
         plt.fill_between(arr_base, np.cbrt(means-stds), np.cbrt(means+stds), color=c, alpha=.3)
 
     plt.xlabel("ploidy")
     # plt.ylabel("pressure")
     plt.ylabel("size")
-    plt.legend(loc=8, ncol=3, title='complex member abundance correlation')
+    plt.legend(loc=8, ncol=4, title='complex member abundance correlation (%)')
     # plt.axis([0.95, 2.05, 0.9, 3.2])
-    plt.axis([0.95, 2.05, 0.9, 1.5])
+    plt.axis([0.95, 2.05, 0.9, 2.05])
     plt.show()
 
     # plt.title('Cell size vs ploidy at complex memeber correlation of %s' % abundance_correlation)
