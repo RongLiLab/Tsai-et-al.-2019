@@ -15,7 +15,7 @@ ploidy_vs_size = load(open('ploidy_vs_size.dmp'))
 abundance_range = abundance_range[abundance_range > 1]
 total_partners = np.array(total_partners)
 total_partners = total_partners[total_partners > 1]
-total_partners = total_partners[total_partners < 45]
+total_partners = total_partners[total_partners < 30]
 total_partners = total_partners.tolist()
 total_partners_old = total_partners
 
@@ -25,21 +25,21 @@ total_partners = np.ceil(total_partners).astype(np.int16)
 total_partners = total_partners[total_partners > 1]
 total_partners_new = total_partners
 
-plt.title('Complex Size distribution')
-data = np.array(total_partners)
-density = gaussian_kde(data.flatten())
-xs = np.linspace(data.min(), data.max(), 50)
-plt.plot(xs, density(xs), 'k', label='gamma distro fitted to mean/std')
-
-data = np.array(total_partners_old)
-density = gaussian_kde(data.flatten())
-xs = np.linspace(data.min(), data.max(), 50)
-plt.plot(xs, density(xs), 'r', label='interaction partners proxy')
-
-plt.xlabel('complex size')
-plt.ylabel('distribution density')
-plt.legend()
-plt.show()
+# plt.title('Complex Size distribution')
+# data = np.array(total_partners)
+# density = gaussian_kde(data.flatten())
+# xs = np.linspace(data.min(), data.max(), 50)
+# plt.plot(xs, density(xs), 'k', label='gamma distro fitted to mean/std')
+#
+# data = np.array(total_partners_old)
+# density = gaussian_kde(data.flatten())
+# xs = np.linspace(data.min(), data.max(), 50)
+# plt.plot(xs, density(xs), 'r', label='interaction partners proxy')
+#
+# plt.xlabel('complex size')
+# plt.ylabel('distribution density')
+# plt.legend()
+# plt.show()
 
 total_partners = total_partners_old
 
@@ -101,13 +101,28 @@ def generate_complex_ids():
 
 def align_complex_abundances(complex_contents, abundance_correlation=0.7):
     aligned_abundances = np.copy(abundance_range)
+    sorted_abundances = np.sort(abundance_range)
 
     for complex in complex_contents[:-1]:
         # print complex
         # print aligned_abundances[complex]
+
+        # # Manual injection boosting of small complexes abundances:
+        # if len(complex) < 45 and len(complex) > 40:
+        #     aligned_abundances[complex] *= 100
+        #     loc_ab_corr = 0.99
+        #     average_abundance = np.mean(aligned_abundances[complex])
+        #     aligned_abundances[complex] = aligned_abundances[complex]*(1 - loc_ab_corr) +\
+        #                                 average_abundance*loc_ab_corr
+
+        # else:
+        #     average_abundance = np.mean(aligned_abundances[complex])
+        #     aligned_abundances[complex] = aligned_abundances[complex]*(1 - abundance_correlation) +\
+        #                                 average_abundance*abundance_correlation
+
         average_abundance = np.mean(aligned_abundances[complex])
         aligned_abundances[complex] = aligned_abundances[complex]*(1 - abundance_correlation) +\
-                                      average_abundance*abundance_correlation
+                                        average_abundance*abundance_correlation
         # print aligned_abundances[complex]
 
     # # Manual large, abundant complex injection:
@@ -118,6 +133,7 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
     # print average_abundance
     # aligned_abundances[complex_contents[-1]] = sorted_abundances[complex_contents[-1]]*(1-abundance_correlation) +\
     #                                             average_abundance*abundance_correlation
+
 
     return aligned_abundances
 
@@ -178,31 +194,56 @@ if __name__ == "__main__":
     ploidy_vs_size[:, 1] /= corrfactor
     ploidy_vs_size[:, 2] /= corrfactor
 
-    base = np.arange(0.00, 1.05, 0.05).tolist()
+    base = np.linspace(0.0, 1.0, 20).tolist()
     arr_base = np.array(base)
     arr_base += 1
-    cmap = get_cmap('Reds')
+    cmap = get_cmap('gnuplot')
+
+    # plt.figure(num=None, figsize=(5, 6), dpi=300, facecolor='w', edgecolor='k')
 
     plt.title('Molecules abundance vs ploidy vs abundance correlation')
     # plt.plot(arr_base, arr_base, 'ok')
-    plt.plot(arr_base, np.cbrt(arr_base), '-k', label='0')
+    plt.plot(arr_base, corrfactor*np.cbrt(arr_base), '--k', label='0', lw=2)
+
+    ax = plt.gca()
+    ax.set_axisbelow(True)
+
+    ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+    ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+
+    plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+    plt.yticks(np.linspace(8, 15, 8), [8, '', 10, '', 12, '', 14, ''])
+
+    plt.xlabel("Ploidy")
+    plt.ylabel("Equivalent Diameter")
+
     # filtered = lowess(ploidy_vs_size[:, 1], ploidy_vs_size[:, 0], is_sorted=True, frac=0.05, it=0)
-    plt.errorbar(ploidy_vs_size[:, 0], ploidy_vs_size[:, 1], yerr=ploidy_vs_size[:, 2], fmt='or', label='exp')
+    # plt.errorbar(ploidy_vs_size[:, 0], ploidy_vs_size[:, 1], yerr=ploidy_vs_size[:, 2], fmt='or', label='exp')
     # plt.plot(filtered[:, 1], filtered[:, 0], 'ob', label='exp')
 
-    for abundance_correlation in range(5, 11):
-        c = cmap(abundance_correlation*0.1)
-        means, stds = core_sim_loop(base, abundance_correlation*0.1, 10)
-        # plt.errorbar(arr_base, means, yerr=stds, fmt='o', color=c, label=abundance_correlation*0.1)
-        plt.plot(arr_base, np.cbrt(means), color=c, label=abundance_correlation*10)
-        plt.fill_between(arr_base, np.cbrt(means-stds), np.cbrt(means+stds), color=c, alpha=.3)
+    corr_min = 0.75
+    corr_max = 0.95
 
-    plt.xlabel("ploidy")
-    # plt.ylabel("pressure")
-    plt.ylabel("size")
-    plt.legend(loc=8, ncol=4, title='complex member abundance correlation (%)')
+    for abundance_correlation in np.linspace(corr_min, corr_max, 5):
+        abundance_correlation = abundance_correlation*10
+        c = cmap((abundance_correlation*0.1-0.7)/(corr_max-corr_min)*0.7)
+        means, stds = core_sim_loop(base, abundance_correlation*0.1, 20)
+        # plt.errorbar(arr_base, means, yerr=stds, fmt='o', color=c, label=abundance_correlation*0.1)
+        plt.plot(arr_base,
+                 corrfactor*np.cbrt(means),
+                 '--',
+                 color=c,
+                 label=abundance_correlation*10, lw=2)
+        plt.fill_between(arr_base,
+                         corrfactor*np.cbrt(means-stds),
+                         corrfactor*np.cbrt(means+stds),
+                         color=c,
+                         alpha=.3)
+
+
+    plt.legend(loc='best', ncol=3, title='complex abundance corr. (%)')
     # plt.axis([0.95, 2.05, 0.9, 3.2])
-    plt.axis([0.95, 2.05, 0.9, 2.05])
+    plt.axis([0.95, 2.05, 8, 15])
     plt.show()
 
     # plt.title('Cell size vs ploidy at complex memeber correlation of %s' % abundance_correlation)
