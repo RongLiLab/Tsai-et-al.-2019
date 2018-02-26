@@ -15,7 +15,7 @@ ploidy_vs_size = load(open('ploidy_vs_size.dmp'))
 abundance_range = abundance_range[abundance_range > 1]
 total_partners = np.array(total_partners)
 total_partners = total_partners[total_partners > 1]
-total_partners = total_partners[total_partners < 30]
+total_partners = total_partners[total_partners < 45]
 total_partners = total_partners.tolist()
 total_partners_old = total_partners
 
@@ -138,7 +138,7 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
     return aligned_abundances
 
 
-def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances):
+def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances, buckets={}):
     multiplication_factor = np.random.binomial(1, aneuploidy_factor, len(abundances))+1
     aneup_abundance = abundances * multiplication_factor
 
@@ -154,28 +154,42 @@ def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances)
         total_complexes += loc_min
         bound_proteins += loc_min * len(complex)
 
-        # we have formed stable complexes
+        complex_size = len(complex)
+        # yup, we are doing it with pointers and pointers are uncool and unpythonic.
+        if buckets and complex_size in buckets.keys():
+            buckets[complex_size][0] += loc_min
+            buckets[complex_size][1] += np.sum(aneup_abundance[complex])
+            buckets[complex_size][2] += np.sum(aneup_abundance[complex] - loc_min)
 
     total_molecules = total_proteins - bound_proteins + total_complexes
 
     return total_molecules
 
 
-def core_simulation_loop():
-    pass
-
-
-def core_sim_loop(base, abundance_correlation=0.7, repeats=5):
+def core_sim_loop(base, abundance_correlation=0.7, repeats=5, buckets=[]):
     complex_contents = generate_complex_ids()
     aligned_abundances = align_complex_abundances(complex_contents, abundance_correlation)
     re_runs = []
-    for _ in range(0, repeats):
+
+    bucket_dict = {}
+    for key in buckets:
+        bucket_dict[key] = [[]for _ in range(repeats)]
+
+    buckets = bucket_dict
+
+    for i in range(0, repeats):
         read_out = []
 
         for aneuploidy_factor in base:
-            # read_out.append(calculate_van_Hoeff(aneuploidy_factor, 6))
+            sub_buckets = {}
+            if buckets:
+                for key in buckets.keys():
+                    sub_buckets[key] = [0, 0, 0]
             read_out.append(calculate_free_mol_entities(aneuploidy_factor, complex_contents,
-                                                        aligned_abundances))
+                                                        aligned_abundances, sub_buckets))
+
+            for key in buckets.keys():
+                buckets[key][i].append(sub_buckets[key])
 
         read_out = np.array(read_out)
         re_runs.append(read_out)
@@ -185,7 +199,11 @@ def core_sim_loop(base, abundance_correlation=0.7, repeats=5):
     stds = np.std(re_runs, 0)
     means, stds = (means / means[0], stds / means[0])
 
-    return means, stds
+    for key, value in buckets.iteritems():
+        val = np.array(value)
+        buckets[key] = np.hstack((np.mean(val, axis=0), np.std(val, axis=0)))
+
+    return means, stds, buckets
 
 
 if __name__ == "__main__":
@@ -227,7 +245,10 @@ if __name__ == "__main__":
     for abundance_correlation in np.linspace(corr_min, corr_max, 5):
         abundance_correlation = abundance_correlation*10
         c = cmap((abundance_correlation*0.1-0.7)/(corr_max-corr_min)*0.7)
-        means, stds = core_sim_loop(base, abundance_correlation*0.1, 20)
+        means, stds, buckets = core_sim_loop(base, abundance_correlation*0.1, 20, [3, 7, 15])
+
+        print buckets
+
         # plt.errorbar(arr_base, means, yerr=stds, fmt='o', color=c, label=abundance_correlation*0.1)
         plt.plot(arr_base,
                  corrfactor*np.cbrt(means),
@@ -246,10 +267,80 @@ if __name__ == "__main__":
     plt.axis([0.95, 2.05, 8, 15])
     plt.show()
 
-    # plt.title('Cell size vs ploidy at complex memeber correlation of %s' % abundance_correlation)
-    # plt.plot(base, np.cbrt(base), 'ok', label='euploidy linear interpolation')
-    # plt.errorbar(base, np.cbrt(means), yerr=np.cbrt(means+stds)-np.cbrt(means-stds), fmt='or', label='simulation results')
-    # plt.xlabel("ploidy")
-    # plt.ylabel("size")
-    # plt.axis([0.95, 2.05, 0.9, 1.5])
-    # plt.show()
+    for key, value_matrix in buckets.iteritems():
+
+        plt.figure()
+        plt.title('Molecules abundance vs ploidy % s for complex size %s' % (corr_max, key))
+
+        print value_matrix
+
+        norm = value_matrix[0, 0] + value_matrix[0, 2]
+        value_matrix /= norm
+
+        plt.plot(arr_base,
+                 value_matrix[:, 0],
+                 '-k',
+                 label='complexes',
+                 lw=2
+                 )
+
+        plt.plot(arr_base,
+                 value_matrix[:, 1],
+                 '-g',
+                 label='total proteins',
+                 lw=2
+                 )
+
+        plt.plot(arr_base,
+                 value_matrix[:, 2],
+                 '-b',
+                 label='free proteins',
+                 lw=2
+                 )
+
+        plt.plot(arr_base,
+                 value_matrix[:, 0] + value_matrix[:, 2],
+                 '-r',
+                 label='total molecules',
+                 lw=2
+                 )
+
+        plt.fill_between(arr_base,
+                         value_matrix[:, 0]+value_matrix[:, 3],
+                         value_matrix[:, 0]-value_matrix[:, 3],
+                         color='k',
+                         alpha=.3)
+
+        plt.fill_between(arr_base,
+                         value_matrix[:, 1]+value_matrix[:, 4],
+                         value_matrix[:, 1]-value_matrix[:, 4],
+                         color='g',
+                         alpha=.3)
+
+        plt.fill_between(arr_base,
+                         value_matrix[:, 2]+value_matrix[:, 5],
+                         value_matrix[:, 2]-value_matrix[:, 5],
+                         color='b',
+                         alpha=.3)
+
+        plt.fill_between(arr_base,
+                         value_matrix[:, 0] + value_matrix[:, 2] + np.sqrt(np.power(value_matrix[:, 3], 2) + np.power(value_matrix[:, 5], 2)),
+                         value_matrix[:, 0] + value_matrix[:, 2] - np.sqrt(np.power(value_matrix[:, 3], 2) + np.power(value_matrix[:, 5], 2)),
+                         color='r',
+                         alpha=.3)
+
+        plt.legend(loc='best', ncol=1, title='')
+        plt.axis([0.95, 2.05, 0, 20])
+
+        plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+        plt.yticks(np.linspace(0, 20, 11))
+
+        ax = plt.gca()
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+        ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+
+        plt.xlabel("Ploidy")
+        plt.ylabel("Abundance relative to total free molecule abundance in haploid")
+
+        plt.show()
