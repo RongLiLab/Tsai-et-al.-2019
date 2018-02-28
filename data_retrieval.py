@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from collections import defaultdict
 from pickle import dump
-
+from scipy.stats import gaussian_kde
 from scipy import stats
 
 abundance_range = []
@@ -67,6 +67,18 @@ partner_abundances = np.array(partner_abundances)
 #
 # plt.loglog(partner_abundances[:, 0], partner_abundances[:, 1], '.k')
 # plt.show()
+
+
+plt.title('Protein abundance distribution (log)')
+data = log_range
+density = gaussian_kde(data.flatten())
+xs = np.linspace(data.min(), data.max(), 50)
+plt.plot(xs, density(xs), 'k')
+
+plt.xlabel('complex abundance (log, arbitrary units)')
+plt.ylabel('distribution density')
+plt.legend()
+plt.show()
 
 slope, intercept, r_value, p_value, std_err = stats.linregress(partner_abundances[:, 0], partner_abundances[:, 1])
 print slope, intercept, r_value, p_value, std_err
