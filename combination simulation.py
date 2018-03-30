@@ -76,8 +76,8 @@ def generate_complex_ids(total_partners):
     i = 0
     local_partners = (np.array(total_partners)+1).tolist()
 
-    # while i < len(abundance_range)-45:  # -45 is here for manual abundant complex injection
-    while i < len(abundance_range):
+    while i < len(abundance_range)-45:  # -45 is here for manual abundant complex injection
+    # while i < len(abundance_range):
         current_complex_size = random.choice(local_partners)
         complex = []
         for j in range(i, i+current_complex_size):
@@ -93,8 +93,8 @@ def generate_complex_ids(total_partners):
     else:
         complex_contents[-1] = last_complex
 
-    # # Manual large, abundant complex injection:
-    # complex_contents.append(range(complex_contents[-1][-1], len(abundance_range)))
+    # Manual large, abundant complex injection:
+    complex_contents.append(range(complex_contents[-1][-1], len(abundance_range)))
 
     return complex_contents
 
@@ -125,14 +125,15 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
                                         average_abundance*abundance_correlation
         # print aligned_abundances[complex]
 
-    # # Manual large, abundant complex injection:
-    # sorted_abundances = np.sort(abundance_range)
-    # print sorted_abundances
-    # print len(complex_contents[-1])
-    # average_abundance = np.mean(sorted_abundances[complex_contents[-1]])
-    # print average_abundance
-    # aligned_abundances[complex_contents[-1]] = sorted_abundances[complex_contents[-1]]*(1-abundance_correlation) +\
-    #                                             average_abundance*abundance_correlation
+    # Manual large, abundant complex injection:
+    sorted_abundances = np.sort(abundance_range)
+    print sorted_abundances
+    print len(complex_contents[-1])
+    average_abundance = np.mean(sorted_abundances[complex_contents[-1]])
+    min_abundance = np.min(sorted_abundances[complex_contents[-1]])
+    print average_abundance, min_abundance
+    aligned_abundances[complex_contents[-1]] = sorted_abundances[complex_contents[-1]]*(1-abundance_correlation) +\
+                                                average_abundance*abundance_correlation
 
 
     return aligned_abundances
@@ -273,127 +274,127 @@ if __name__ == "__main__":
     plt.axis([0.95, 2.05, 8, 15])
     plt.show()
 
-    ################################################################################################
-    ## Rendering routines for the abundance
-    ################################################################################################
+    # ################################################################################################
+    # ## Rendering routines for the abundance
+    # ################################################################################################
+    #
+    # for key, value_matrix in buckets.iteritems():
+    #
+    #     plt.figure()
+    #     plt.title('Molecules abundance vs ploidy % s for complex size %s' % (curr_corr, key))
+    #
+    #     print value_matrix
+    #
+    #     norm = value_matrix[0, 0] + value_matrix[0, 2]
+    #     value_matrix /= norm
+    #
+    #     plt.plot(arr_base,
+    #              value_matrix[:, 0],
+    #              '-k',
+    #              label='complexes',
+    #              lw=2
+    #              )
+    #
+    #     # plt.plot(arr_base,
+    #     #          value_matrix[:, 1]/value_matrix[0, 1],
+    #     #          '-g',
+    #     #          label='total proteins',
+    #     #          lw=2
+    #     #          )
+    #
+    #     plt.plot(arr_base,
+    #              value_matrix[:, 2],
+    #              '-b',
+    #              label='free proteins',
+    #              lw=2
+    #              )
+    #
+    #     plt.plot(arr_base,
+    #              value_matrix[:, 0] + value_matrix[:, 2],
+    #              '-r',
+    #              label='total molecules',
+    #              lw=2
+    #              )
+    #
+    #     plt.fill_between(arr_base,
+    #                      value_matrix[:, 0]+value_matrix[:, 3],
+    #                      value_matrix[:, 0]-value_matrix[:, 3],
+    #                      color='k',
+    #                      alpha=.3)
+    #
+    #     # plt.fill_between(arr_base,
+    #     #                  (value_matrix[:, 1]+value_matrix[:, 4])/value_matrix[0, 1],
+    #     #                  (value_matrix[:, 1]-value_matrix[:, 4])/value_matrix[0, 1],
+    #     #                  color='g',
+    #     #                  alpha=.3)
+    #
+    #     plt.fill_between(arr_base,
+    #                      value_matrix[:, 2]+value_matrix[:, 5],
+    #                      value_matrix[:, 2]-value_matrix[:, 5],
+    #                      color='b',
+    #                      alpha=.3)
+    #
+    #     plt.fill_between(arr_base,
+    #                      value_matrix[:, 0] + value_matrix[:, 2] + np.sqrt(np.power(value_matrix[:, 3], 2) + np.power(value_matrix[:, 5], 2)),
+    #                      value_matrix[:, 0] + value_matrix[:, 2] - np.sqrt(np.power(value_matrix[:, 3], 2) + np.power(value_matrix[:, 5], 2)),
+    #                      color='r',
+    #                      alpha=.3)
+    #
+    #     plt.legend(loc='best', ncol=1, title='')
+    #     plt.axis([0.95, 2.05, 0, 4])
+    #
+    #     plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+    #     plt.yticks(np.linspace(0, 4, 9))
+    #
+    #     ax = plt.gca()
+    #     ax.set_axisbelow(True)
+    #     ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+    #     ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+    #
+    #     plt.xlabel("Ploidy")
+    #     plt.ylabel("Abundance relative to total free molecule abundance in haploid")
+    #
+    #     plt.show()
 
-    for key, value_matrix in buckets.iteritems():
-
-        plt.figure()
-        plt.title('Molecules abundance vs ploidy % s for complex size %s' % (curr_corr, key))
-
-        print value_matrix
-
-        norm = value_matrix[0, 0] + value_matrix[0, 2]
-        value_matrix /= norm
-
-        plt.plot(arr_base,
-                 value_matrix[:, 0],
-                 '-k',
-                 label='complexes',
-                 lw=2
-                 )
-
-        # plt.plot(arr_base,
-        #          value_matrix[:, 1]/value_matrix[0, 1],
-        #          '-g',
-        #          label='total proteins',
-        #          lw=2
-        #          )
-
-        plt.plot(arr_base,
-                 value_matrix[:, 2],
-                 '-b',
-                 label='free proteins',
-                 lw=2
-                 )
-
-        plt.plot(arr_base,
-                 value_matrix[:, 0] + value_matrix[:, 2],
-                 '-r',
-                 label='total molecules',
-                 lw=2
-                 )
-
-        plt.fill_between(arr_base,
-                         value_matrix[:, 0]+value_matrix[:, 3],
-                         value_matrix[:, 0]-value_matrix[:, 3],
-                         color='k',
-                         alpha=.3)
-
-        # plt.fill_between(arr_base,
-        #                  (value_matrix[:, 1]+value_matrix[:, 4])/value_matrix[0, 1],
-        #                  (value_matrix[:, 1]-value_matrix[:, 4])/value_matrix[0, 1],
-        #                  color='g',
-        #                  alpha=.3)
-
-        plt.fill_between(arr_base,
-                         value_matrix[:, 2]+value_matrix[:, 5],
-                         value_matrix[:, 2]-value_matrix[:, 5],
-                         color='b',
-                         alpha=.3)
-
-        plt.fill_between(arr_base,
-                         value_matrix[:, 0] + value_matrix[:, 2] + np.sqrt(np.power(value_matrix[:, 3], 2) + np.power(value_matrix[:, 5], 2)),
-                         value_matrix[:, 0] + value_matrix[:, 2] - np.sqrt(np.power(value_matrix[:, 3], 2) + np.power(value_matrix[:, 5], 2)),
-                         color='r',
-                         alpha=.3)
-
-        plt.legend(loc='best', ncol=1, title='')
-        plt.axis([0.95, 2.05, 0, 4])
-
-        plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
-        plt.yticks(np.linspace(0, 4, 9))
-
-        ax = plt.gca()
-        ax.set_axisbelow(True)
-        ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
-        ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
-
-        plt.xlabel("Ploidy")
-        plt.ylabel("Abundance relative to total free molecule abundance in haploid")
-
-        plt.show()
-
-    ################################################################################################
-    ## Rendering routines for the complex size swipe
-    ################################################################################################
-
-    plt.title('Cell diameter vs ploidy vs complex size')
-    plt.plot(arr_base, corrfactor*np.cbrt(arr_base), '--k', label='1', lw=2)
-
-    ax = plt.gca()
-    ax.set_axisbelow(True)
-
-    ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
-    ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
-
-    plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
-    plt.yticks(np.linspace(8, 15, 8), [8, '', 10, '', 12, '', 14, ''])
-
-    plt.xlabel("Ploidy")
-    plt.ylabel("Equivalent Diameter")
-
-    complex_sizes = [2, 5, 10, 20, 40]
-
-    for c_size in complex_sizes:
-        c = cmap(c_size/40.*0.8+0.1)
-
-        means, stds, buckets = core_sim_loop(base,[c_size], 0.75, 20, [])
-
-        plt.plot(arr_base,
-                 corrfactor*np.cbrt(means),
-                 '--',
-                 color=c,
-                 label=c_size, lw=2)
-
-        plt.fill_between(arr_base,
-                         corrfactor*np.cbrt(means-stds),
-                         corrfactor*np.cbrt(means+stds),
-                         color=c,
-                         alpha=.3)
-
-
-    plt.legend(loc='best', ncol=3, title='complex size')
-    plt.axis([0.95, 2.05, 8, 15])
-    plt.show()
+    # ################################################################################################
+    # ## Rendering routines for the complex size swipe
+    # ################################################################################################
+    #
+    # plt.title('Cell diameter vs ploidy vs complex size')
+    # plt.plot(arr_base, corrfactor*np.cbrt(arr_base), '--k', label='1', lw=2)
+    #
+    # ax = plt.gca()
+    # ax.set_axisbelow(True)
+    #
+    # ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+    # ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+    #
+    # plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+    # plt.yticks(np.linspace(8, 15, 8), [8, '', 10, '', 12, '', 14, ''])
+    #
+    # plt.xlabel("Ploidy")
+    # plt.ylabel("Equivalent Diameter")
+    #
+    # complex_sizes = [2, 5, 10, 20, 40]
+    #
+    # for c_size in complex_sizes:
+    #     c = cmap(c_size/40.*0.8+0.1)
+    #
+    #     means, stds, buckets = core_sim_loop(base,[c_size], 0.75, 20, [])
+    #
+    #     plt.plot(arr_base,
+    #              corrfactor*np.cbrt(means),
+    #              '--',
+    #              color=c,
+    #              label=c_size, lw=2)
+    #
+    #     plt.fill_between(arr_base,
+    #                      corrfactor*np.cbrt(means-stds),
+    #                      corrfactor*np.cbrt(means+stds),
+    #                      color=c,
+    #                      alpha=.3)
+    #
+    #
+    # plt.legend(loc='best', ncol=3, title='complex size')
+    # plt.axis([0.95, 2.05, 8, 15])
+    # plt.show()
