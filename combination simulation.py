@@ -19,11 +19,14 @@ total_partners = total_partners[total_partners < 45]
 total_partners = total_partners.tolist()
 total_partners_old = total_partners
 
-
 total_partners = np.random.gamma(1.538, 2.016, len(total_partners))
 total_partners = np.ceil(total_partners).astype(np.int16)
 total_partners = total_partners[total_partners > 1]
 total_partners_new = total_partners
+
+alpha_factor = 1.0
+
+deviation_from_ideality = 1.0
 
 # plt.title('Complex Size distribution')
 # data = np.array(total_partners)
@@ -207,30 +210,27 @@ def core_sim_loop(base, total_partners, abundance_correlation=0.7, repeats=5, bu
     return means, stds, buckets
 
 
-if __name__ == "__main__":
+# reference (black line)
+# variated thing
+# variated thing values
+#
+def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=None, array_vals_name=''):
+    """
+    Generates a plot of states based on a variation of a single parameter.
 
-    corrfactor = ploidy_vs_size[0, 1]
-    ploidy_vs_size[:, 1] /= corrfactor
-    ploidy_vs_size[:, 2] /= corrfactor
+    :param base_array: 1D numpy array
+    :param names_array: 1D numpy string arrays
+
+    :return:
+    """
+    plt.title('Cell diameter vs ploidy vs %s' % array_vals_name)
 
     base = np.linspace(0.0, 1.0, 20).tolist()
     arr_base = np.array(base)
     arr_base += 1
-    cmap = get_cmap('brg')
-
-    # plt.figure(num=None, figsize=(5, 6), dpi=300, facecolor='w', edgecolor='k')
-
-    ################################################################################################
-    ## Swipe for the abundance correlation swipe
-    ################################################################################################
-
-    plt.title('Cell diameter vs ploidy vs abundance correlation')
-    # plt.plot(arr_base, arr_base, 'ok')
-    plt.plot(arr_base, corrfactor*np.cbrt(arr_base), '--k', label='0', lw=2)
 
     ax = plt.gca()
     ax.set_axisbelow(True)
-
     ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
     ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
 
@@ -240,39 +240,94 @@ if __name__ == "__main__":
     plt.xlabel("Ploidy")
     plt.ylabel("Equivalent Diameter")
 
-    # filtered = lowess(ploidy_vs_size[:, 1], ploidy_vs_size[:, 0], is_sorted=True, frac=0.05, it=0)
-    # plt.errorbar(ploidy_vs_size[:, 0], ploidy_vs_size[:, 1], yerr=ploidy_vs_size[:, 2], fmt='or', label='exp')
-    # plt.plot(filtered[:, 1], filtered[:, 0], 'ob', label='exp')
+    cmap = get_cmap('brg')
 
-    corr_min = 0.5
-    corr_max = 0.9
+    if names_array is None:
+        names_array = base_array
 
-    for i, abundance_correlation in enumerate(np.linspace(corr_min, corr_max, 5)):
-        abundance_correlation = abundance_correlation
-        c = cmap((abundance_correlation-corr_min)/(corr_max-corr_min)*0.8+0.1)
-        means, stds, pre_buckets = core_sim_loop(base, total_partners, abundance_correlation, 20, [3, 15])
+    if base_val is not None and base_name is None:
+        base_name = base_val
 
-        if i == 2:
-            curr_corr = abundance_correlation
-            buckets = pre_buckets
-        # plt.errorbar(arr_base, means, yerr=stds, fmt='o', color=c, label=abundance_correlation*0.1)
+    # base array is assumed to be a 1D numpy array
+
+    color_remap = np.linspace(0.5, 0.9, len(base_array))[np.argsort(base_array)[np.argsort(base_array)]]
+
+    print 'base array', base_array
+    print 'color remap', color_remap
+    print 'names array', names_array
+
+    # reference plot
+
+    if base_val is not None:
+        means, stds, pre_buckets = core_sim_loop(base,
+                                                 total_partners,
+                                                 base_val,
+                                                 20,
+                                                 [3, 15])
+
         plt.plot(arr_base,
-                 corrfactor*np.cbrt(means),
-                 '--',
-                 color=c,
-                 label=abundance_correlation*100, lw=2)
+                 corrfactor * np.cbrt(means),
+                 '--k',
+                 label=base_name,
+                 lw=2)
 
         plt.fill_between(arr_base,
-                         corrfactor*np.cbrt(means-stds),
-                         corrfactor*np.cbrt(means+stds),
-                         color=c,
+                         corrfactor * np.cbrt(means - stds),
+                         corrfactor * np.cbrt(means + stds),
+                         color='k',
                          alpha=.3)
 
+    # the variation loop
+    for i, (abundance_correlation, color, name) in enumerate(zip(base_array, color_remap, names_array)):
 
-    plt.legend(loc='best', ncol=3, title='complex abundance corr. (%)')
-    # plt.axis([0.95, 2.05, 0.9, 3.2])
+        abundance_correlation = abundance_correlation
+
+        # color generation from the 0.5-0.9 space
+        color = cmap((abundance_correlation - 0.5) / (0.9 - 0.5) * 0.8 + 0.1)
+
+        # generation of the curve proper
+        means, stds, pre_buckets = core_sim_loop(base,
+                                                 total_partners,
+                                                 abundance_correlation,
+                                                 20,
+                                                 [3, 15])
+
+        plt.plot(arr_base,
+                 corrfactor * np.cbrt(means),
+                 '--',
+                 color=color,
+                 label=abundance_correlation * 100,
+                 lw=2)
+
+        plt.fill_between(arr_base,
+                         corrfactor * np.cbrt(means - stds),
+                         corrfactor * np.cbrt(means + stds),
+                         color=color,
+                         alpha=.3)
+
+    # here what is plotted is varied as well.
+    plt.legend(loc='best', ncol=3, title=array_vals_name)
+
+    # and y-axis here needs to be adjusted dynamically as well
     plt.axis([0.95, 2.05, 8, 15])
     plt.show()
+
+
+if __name__ == "__main__":
+
+    corrfactor = ploidy_vs_size[0, 1]
+    ploidy_vs_size[:, 1] /= corrfactor
+    ploidy_vs_size[:, 2] /= corrfactor
+
+    # plt.figure(num=None, figsize=(5, 6), dpi=300, facecolor='w', edgecolor='k')
+
+    ################################################################################################
+    ## Swipe for the abundance correlation swipe
+    ################################################################################################
+
+    corr_vars = np.linspace(0.5, 0.9, 5)
+    print corr_vars
+    diameter_plot_array(corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)')
 
     # ################################################################################################
     # ## Rendering routines for the abundance
