@@ -6,6 +6,7 @@ import random
 from matplotlib.cm import get_cmap
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from scipy.stats import gaussian_kde
+from functools import partial
 
 random.seed(42)
 
@@ -252,12 +253,12 @@ def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=N
 
     color_remap = np.linspace(0.5, 0.9, len(base_array))[np.argsort(base_array)[np.argsort(base_array)]]
 
-    print 'base array', base_array
-    print 'color remap', color_remap
-    print 'names array', names_array
+
+
+    # todo: form a partial function
+    # => kwargs
 
     # reference plot
-
     if base_val is not None:
         means, stds, pre_buckets = core_sim_loop(base,
                                                  total_partners,
@@ -276,6 +277,8 @@ def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=N
                          corrfactor * np.cbrt(means + stds),
                          color='k',
                          alpha=.3)
+
+
 
     # the variation loop
     for i, (abundance_correlation, color, name) in enumerate(zip(base_array, color_remap, names_array)):
