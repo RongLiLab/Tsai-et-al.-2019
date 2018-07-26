@@ -171,7 +171,8 @@ def calculate_free_mol_entities(aneuploidy_factor, complex_contents, abundances,
     return total_molecules
 
 
-def core_sim_loop(base, total_partners, abundance_correlation=0.7, repeats=5, buckets=[]):
+def core_sim_loop(base, total_partners, abundance_correlation=0.7, repeats=5, buckets=[], alpha=1, ideality_correction=1):
+
     complex_contents = generate_complex_ids(total_partners)
     aligned_abundances = align_complex_abundances(complex_contents, abundance_correlation)
     re_runs = []
@@ -187,6 +188,7 @@ def core_sim_loop(base, total_partners, abundance_correlation=0.7, repeats=5, bu
 
         for aneuploidy_factor in base:
             sub_buckets = {}
+
             if buckets:
                 for key in buckets.keys():
                     sub_buckets[key] = [0, 0, 0]
@@ -202,7 +204,7 @@ def core_sim_loop(base, total_partners, abundance_correlation=0.7, repeats=5, bu
     re_runs = np.array(re_runs)
     means = np.mean(re_runs, 0)
     stds = np.std(re_runs, 0)
-    means, stds = (means / means[0], stds / means[0])
+    means, stds = (means / means[0]*alpha*ideality_correction, stds / means[0]*alpha*ideality_correction)
 
     for key, value in buckets.iteritems():
         val = np.array(value)
@@ -215,7 +217,9 @@ def core_sim_loop(base, total_partners, abundance_correlation=0.7, repeats=5, bu
 # variated thing
 # variated thing values
 #
-def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=None, array_vals_name=''):
+def diameter_plot_array(defautlt_params, base_array,
+                        names_array=None, base_val=None, base_name=None,
+                        array_vals_name='', y_min=8, y_max=15, yticks=8):
     """
     Generates a plot of states based on a variation of a single parameter.
 
@@ -236,7 +240,9 @@ def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=N
     ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
 
     plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
-    plt.yticks(np.linspace(8, 15, 8), [8, '', 10, '', 12, '', 14, ''])
+    base_yticks_array = np.linspace(y_min, y_max, yticks)
+    base_yticks_array_names = [int(val) if i % 2 == 0 else '' for i, val in enumerate(base_yticks_array)]
+    plt.yticks(base_yticks_array, base_yticks_array_names)
 
     plt.xlabel("Ploidy")
     plt.ylabel("Equivalent Diameter")
@@ -253,18 +259,36 @@ def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=N
 
     color_remap = np.linspace(0.5, 0.9, len(base_array))[np.argsort(base_array)[np.argsort(base_array)]]
 
+    defautlt_params['base'] = base
+    defautlt_params['total_partners'] = total_partners
 
+    # for key, value in defautlt_params.iteritems():
+    #     print key, value
+
+    running_partial = core_sim_loop
+
+    free_kwarg = ''
+    for key, value in defautlt_params.iteritems():
+        if value is not None:
+            running_partial = partial(running_partial, **{key: value})
+        else:
+            free_kwarg = key
+
+    # partial_function = partial(core_sim_loop, **defautlt_params)
+    partial_function = running_partial
 
     # todo: form a partial function
     # => kwargs
 
     # reference plot
     if base_val is not None:
-        means, stds, pre_buckets = core_sim_loop(base,
-                                                 total_partners,
-                                                 base_val,
-                                                 20,
-                                                 [3, 15])
+        # means, stds, pre_buckets = core_sim_loop(base,
+        #                                          total_partners,
+        #                                          base_val,
+        #                                          20,
+        #                                          [3, 15])
+
+        means, stds, pre_buckets = partial_function(**{free_kwarg: base_val})
 
         plt.plot(arr_base,
                  corrfactor * np.cbrt(means),
@@ -281,25 +305,25 @@ def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=N
 
 
     # the variation loop
-    for i, (abundance_correlation, color, name) in enumerate(zip(base_array, color_remap, names_array)):
-
-        abundance_correlation = abundance_correlation
+    for i, (var_value, color, name) in enumerate(zip(base_array, color_remap, names_array)):
 
         # color generation from the 0.5-0.9 space
-        color = cmap((abundance_correlation - 0.5) / (0.9 - 0.5) * 0.8 + 0.1)
+        color = cmap((color - 0.5) / (0.9 - 0.5) * 0.8 + 0.1)
 
         # generation of the curve proper
-        means, stds, pre_buckets = core_sim_loop(base,
-                                                 total_partners,
-                                                 abundance_correlation,
-                                                 20,
-                                                 [3, 15])
+        # means, stds, pre_buckets = core_sim_loop(base,
+        #                                          total_partners,
+        #                                          var_value,
+        #                                          20,
+        #                                          [3, 15])
+
+        means, stds, pre_buckets = partial_function(**{free_kwarg: var_value})
 
         plt.plot(arr_base,
                  corrfactor * np.cbrt(means),
                  '--',
                  color=color,
-                 label=abundance_correlation * 100,
+                 label=name,
                  lw=2)
 
         plt.fill_between(arr_base,
@@ -312,7 +336,7 @@ def diameter_plot_array(base_array, names_array=None, base_val=None, base_name=N
     plt.legend(loc='best', ncol=3, title=array_vals_name)
 
     # and y-axis here needs to be adjusted dynamically as well
-    plt.axis([0.95, 2.05, 8, 15])
+    plt.axis([0.95, 2.05, y_min, y_max])
     plt.show()
 
 
@@ -328,9 +352,17 @@ if __name__ == "__main__":
     ## Swipe for the abundance correlation swipe
     ################################################################################################
 
-    corr_vars = np.linspace(0.5, 0.9, 5)
-    print corr_vars
-    diameter_plot_array(corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)')
+    # corr_vars = np.linspace(0.5, 0.9, 5)
+    # kwargs = {'abundance_correlation': None, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': 1}
+    # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)', 8, 15, 8)
+
+    # corr_vars = np.linspace(0.15, 0.95, 5)
+    # kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': None, 'ideality_correction': 1}
+    # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'alpha value. (%)', 4, 14, 11)
+
+    corr_vars = np.linspace(0.5, 1.5, 6)
+    kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': None}
+    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'ideality correction factor. (%)', 8, 15, 8)
 
     # ################################################################################################
     # ## Rendering routines for the abundance
