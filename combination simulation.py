@@ -356,9 +356,9 @@ if __name__ == "__main__":
     # kwargs = {'abundance_correlation': None, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': 1}
     # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)', 8, 15, 8)
 
-    # corr_vars = np.linspace(0.15, 0.95, 5)
-    # kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': None, 'ideality_correction': 1}
-    # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'alpha value. (%)', 4, 14, 11)
+    corr_vars = np.linspace(0.15, 0.95, 5)
+    kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': None, 'ideality_correction': 1}
+    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'alpha value. (%)', 4, 14, 11)
 
     corr_vars = np.linspace(0.5, 1.5, 6)
     kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': None}
