@@ -391,14 +391,18 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
 
     alpha_0 = np.exp(-0.05e6*(18.03e-3)/8.314/293)
 
+    press = []
     for value in undervolume:
-        pressure = -8.314*293./18.03e-3*np.log(alpha_0*value)
-        print alpha_0*value, pressure, pressure/0.05e6
+        alpha = 1 - (1 - alpha_0)/value
+        pressure = -8.314*293./18.03e-3*np.log(alpha)
+        print value, alpha, pressure, pressure/0.05e6
+        if not np.isnan(pressure):
+            press.append(pressure)
 
-    print type(undervolume)
+    press = np.array(press)
 
-    aneuploid_means = -8.314*293./18.03e-3*np.log(alpha_0*undervolume[1:-1])
-    euploid_means = -8.314*293./18.03e-3*np.log(alpha_0*undervolume[[0, -1],])
+    aneuploid_means = press[1:-1]
+    euploid_means = press[[0, -1],]
 
     # print alpha_0, alpha_0*undervolume, -8.314*293./18.03e-3*np.log(undervolume)
 
