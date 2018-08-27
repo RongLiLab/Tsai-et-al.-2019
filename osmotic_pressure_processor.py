@@ -2,6 +2,7 @@ from csv import reader as csv_reader
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde, t, sem
+from pickle import dump
 
 type_index = []
 master_table = []
@@ -91,6 +92,8 @@ for i, cluster in enumerate(euploid_cleared_clusters):
 
 plt.show()
 
+print "means ratio: 1:%f" % (np.mean(aneuploid_means)/np.mean(euploid_means))
+
 vibration = 0.05*(2*np.random.rand(len(euploid_means))-1)
 plt.plot(1+vibration, euploid_means, 'ko')
 vibration = 0.05*(2*np.random.rand(len(aneuploid_means))-1)
@@ -98,6 +101,8 @@ plt.plot(2+vibration, aneuploid_means, 'ko')
 plt.boxplot([euploid_means, aneuploid_means])
 
 plt.show()
+
+dump((euploid_means, aneuploid_means), open('osmotic_pressure.dmp', 'w'))
 
 # print euploids_raw
 
