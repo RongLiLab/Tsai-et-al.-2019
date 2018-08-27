@@ -114,8 +114,8 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
 
         # Manual injection boosting of small complexes abundances:
         if len(complex) < 45 and len(complex) > 40:
-            aligned_abundances[complex] *= 70
-            loc_ab_corr = 0.85
+            aligned_abundances[complex] *= 180
+            loc_ab_corr = 0.99
             average_abundance = np.mean(aligned_abundances[complex])
             aligned_abundances[complex] = aligned_abundances[complex]*(1 - loc_ab_corr) +\
                                         average_abundance*loc_ab_corr
@@ -412,34 +412,47 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
     plt.axis([0.95, 2.05, y_min, y_max])
     plt.show()
 
-    normalizer_1 = np.mean(euploid_means)
-    normalizer_2 = np.mean(true_euploids_op)
-
     true_euploids_op, true_aneuploid_op = load(open('osmotic_pressure.dmp', 'r'))
+
+    normalizer_1 = np.median(euploid_means)
+    normalizer_2 = np.median(true_euploids_op)
+
     true_euploids_op = np.array(true_euploids_op)/normalizer_2
     true_aneuploid_op = np.array(true_aneuploid_op)/normalizer_2
 
-    print "means ratio: 1:%f" % (np.mean(aneuploid_means)/np.mean(euploid_means))
+    euploid_means = euploid_means/normalizer_1
+    aneuploid_means = aneuploid_means/normalizer_1
+
+    print "simulations medians ratio: 1:%f" % (np.median(aneuploid_means)/np.median(euploid_means))
+    print "true medians ratio: 1:%f" % (np.median(true_aneuploid_op)/np.median(true_euploids_op))
 
     vibration = 0.05*(2*np.random.rand(len(euploid_means))-1)
     plt.plot(1+vibration, euploid_means, 'ko')
     vibration = 0.05*(2*np.random.rand(len(aneuploid_means))-1)
     plt.plot(2+vibration, aneuploid_means, 'ko')
 
+    vibration = 0.05 * (2 * np.random.rand(len(true_euploids_op)) - 1)
+    plt.plot(3 + vibration, true_euploids_op, 'ko')
+    vibration = 0.05 * (2 * np.random.rand(len(true_aneuploid_op)) - 1)
+    plt.plot(4 + vibration, true_aneuploid_op, 'ko')
 
-
-    print true_euploids_op
-    print true_aneuploid_op
-    print normalizer_1
-
-    bplot1 = plt.boxplot([euploid_means/normalizer_1, true_euploids_op/normalizer_2,
-                          aneuploid_means/normalizer_1, true_aneuploid_op/normalizer_2],
-                         patch_artist=True)
+    bplot1 = plt.boxplot([euploid_means, aneuploid_means, true_euploids_op, true_aneuploid_op],
+                         patch_artist=True
+                         )
 
     colors = ['lightblue', 'pink', 'lightblue', 'pink']
     for bplot in [bplot1]:
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
+
+
+    plt.ylabel('Turgor pressure\nrelative to the euploid median')
+
+    # add x-tick labels
+    plt.xticks([y + 1 for y in range(4)], ['simulated\neuploid\nturgor',
+                                           'simulated\naneuploid\nturgor',
+                                           'measured\neuploid\nturgor',
+                                           'measured\naneuploid\nturgor'])
 
     plt.show()
 
