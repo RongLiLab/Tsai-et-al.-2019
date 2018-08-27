@@ -7,6 +7,7 @@ from matplotlib.cm import get_cmap
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from scipy.stats import gaussian_kde
 from functools import partial
+from scipy.interpolate import interp1d
 
 random.seed(42)
 
@@ -111,18 +112,18 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
         # print complex
         # print aligned_abundances[complex]
 
-        # # Manual injection boosting of small complexes abundances:
-        # if len(complex) < 45 and len(complex) > 40:
-        #     aligned_abundances[complex] *= 100
-        #     loc_ab_corr = 0.99
-        #     average_abundance = np.mean(aligned_abundances[complex])
-        #     aligned_abundances[complex] = aligned_abundances[complex]*(1 - loc_ab_corr) +\
-        #                                 average_abundance*loc_ab_corr
+        # Manual injection boosting of small complexes abundances:
+        if len(complex) < 45 and len(complex) > 40:
+            aligned_abundances[complex] *= 100
+            loc_ab_corr = 0.99
+            average_abundance = np.mean(aligned_abundances[complex])
+            aligned_abundances[complex] = aligned_abundances[complex]*(1 - loc_ab_corr) +\
+                                        average_abundance*loc_ab_corr
 
-        # else:
-        #     average_abundance = np.mean(aligned_abundances[complex])
-        #     aligned_abundances[complex] = aligned_abundances[complex]*(1 - abundance_correlation) +\
-        #                                 average_abundance*abundance_correlation
+        else:
+            average_abundance = np.mean(aligned_abundances[complex])
+            aligned_abundances[complex] = aligned_abundances[complex]*(1 - abundance_correlation) +\
+                                        average_abundance*abundance_correlation
 
         average_abundance = np.mean(aligned_abundances[complex])
         aligned_abundances[complex] = aligned_abundances[complex]*(1 - abundance_correlation) +\
@@ -340,6 +341,82 @@ def diameter_plot_array(defautlt_params, base_array,
     plt.show()
 
 
+def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
+
+    plt.title('Cell diameter vs ploidy')
+
+    base = np.linspace(0.0, 1.0, 20).tolist()
+    arr_base = np.array(base)
+    arr_base += 1
+
+    ax = plt.gca()
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+    ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
+
+    plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+    base_yticks_array = np.linspace(y_min, y_max, yticks)
+    base_yticks_array_names = [int(val) if i % 2 == 0 else '' for i, val in enumerate(base_yticks_array)]
+    plt.yticks(base_yticks_array, base_yticks_array_names)
+
+    plt.xlabel("Ploidy")
+    plt.ylabel("Equivalent Diameter")
+
+    means, stds, pre_buckets = core_sim_loop(base, total_partners,
+                                             abundance_correlation=0.7)
+
+    interp_prediction = interp1d(arr_base, corrfactor*np.cbrt(means), kind='cubic')
+
+    plt.plot(arr_base,
+             corrfactor * np.cbrt(means),
+             '--k',
+             label='',
+             lw=2)
+
+    plt.fill_between(arr_base,
+                     corrfactor * np.cbrt(means - stds),
+                     corrfactor * np.cbrt(means + stds),
+                     color='k',
+                     alpha=.3)
+
+    sorting_index = np.argsort(ploidy_vs_size[:, 0])
+
+    plt.errorbar(ploidy_vs_size[sorting_index, 0],
+                 ploidy_vs_size[sorting_index, 1]*corrfactor,
+                 yerr=ploidy_vs_size[sorting_index, 2]*corrfactor,
+                 fmt='ro--')
+
+    undervolume = (ploidy_vs_size[sorting_index, 1]*corrfactor)**3/(interp_prediction(
+        ploidy_vs_size[sorting_index, 0]))**3
+
+    alpha_0 = np.exp(-0.05e6*(18.03e-3)/8.314/293)
+
+    for value in undervolume:
+        pressure = -8.314*293./18.03e-3*np.log(alpha_0*value)
+        print alpha_0*value, pressure, pressure/0.05e6
+
+    print type(undervolume)
+
+    aneuploid_means = -8.314*293./18.03e-3*np.log(alpha_0*undervolume[1:-1])
+    euploid_means = -8.314*293./18.03e-3*np.log(alpha_0*undervolume[[0, -1],])
+
+    # print alpha_0, alpha_0*undervolume, -8.314*293./18.03e-3*np.log(undervolume)
+
+    plt.legend(loc='best', ncol=3)
+
+    # and y-axis here needs to be adjusted dynamically as well
+    plt.axis([0.95, 2.05, y_min, y_max])
+    plt.show()
+
+    vibration = 0.05*(2*np.random.rand(len(euploid_means))-1)
+    plt.plot(1+vibration, euploid_means, 'ko')
+    vibration = 0.05*(2*np.random.rand(len(aneuploid_means))-1)
+    plt.plot(2+vibration, aneuploid_means, 'ko')
+    plt.boxplot([euploid_means, aneuploid_means])
+
+    plt.show()
+
+
 if __name__ == "__main__":
 
     corrfactor = ploidy_vs_size[0, 1]
@@ -348,21 +425,23 @@ if __name__ == "__main__":
 
     # plt.figure(num=None, figsize=(5, 6), dpi=300, facecolor='w', edgecolor='k')
 
+    get_osmotic_pressure()
+
     ################################################################################################
     ## Swipe for the abundance correlation swipe
     ################################################################################################
 
-    # corr_vars = np.linspace(0.5, 0.9, 5)
-    # kwargs = {'abundance_correlation': None, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': 1}
-    # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)', 8, 15, 8)
+    corr_vars = np.linspace(0.5, 0.9, 5)
+    kwargs = {'abundance_correlation': None, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': 1}
+    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)', 8, 15, 8)
 
-    corr_vars = np.linspace(0.15, 0.95, 5)
-    kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': None, 'ideality_correction': 1}
-    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'alpha value. (%)', 4, 14, 11)
-
-    corr_vars = np.linspace(0.5, 1.5, 6)
-    kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': None}
-    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'ideality correction factor. (%)', 8, 15, 8)
+    # corr_vars = np.linspace(0.15, 0.95, 5)
+    # kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': None, 'ideality_correction': 1}
+    # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'alpha value. (%)', 4, 14, 11)
+    #
+    # corr_vars = np.linspace(0.5, 1.5, 6)
+    # kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': None}
+    # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 1.0, 100, 'ideality correction factor. (%)', 8, 15, 8)
 
     # ################################################################################################
     # ## Rendering routines for the abundance

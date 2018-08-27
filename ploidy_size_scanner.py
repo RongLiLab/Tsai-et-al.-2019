@@ -2,6 +2,7 @@ from csv import reader as csv_reader
 from os import path, walk
 import numpy as np
 import pickle
+from pprint import pprint
 
 directory = "C:\Users\Andrei\Dropbox\workspaces\JHU\Hung-Ji paper\size data"
 ploidy_dict = {}
@@ -34,13 +35,13 @@ with open(path.join(directory, 'ploidy_size.tsv'), 'r') as source:
     for line in reader:
         ploidy_dict[line[0].split('.')[0]] = float(line[1])
 
-# print ploidy_dict
+pprint(ploidy_dict)
 
 for loc, sub_folders, files in walk(directory):
     for fle in files:
         if fle[-4:] == '.txt':
             # print fle
-            ploidy = ploidy_dict[fle[:-4]]
+            ploidy = ploidy_dict[fle[:-4].upper()]
             mean, std = per_file_loop(fle)
             master_table.append([ploidy, mean, std])
 
