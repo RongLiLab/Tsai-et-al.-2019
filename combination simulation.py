@@ -30,6 +30,10 @@ alpha_factor = 1.0
 
 deviation_from_ideality = 1.0
 
+large_complex_boost = 150
+large_complex_correlation = 0.95
+base_abundance_correlation = 0.85
+
 # plt.title('Complex Size distribution')
 # data = np.array(total_partners)
 # density = gaussian_kde(data.flatten())
@@ -81,7 +85,7 @@ def generate_complex_ids(total_partners):
     i = 0
     local_partners = (np.array(total_partners)+1).tolist()
 
-    while i < len(abundance_range)-45:  # -45 is here for manual abundant complex injection
+    while i < len(abundance_range) - 45:  # -45 is here for manual abundant complex injection
     # while i < len(abundance_range):
         current_complex_size = random.choice(local_partners)
         complex = []
@@ -114,8 +118,8 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
 
         # Manual injection boosting of small complexes abundances:
         if len(complex) < 45 and len(complex) > 40:
-            aligned_abundances[complex] *= 180
-            loc_ab_corr = 0.99
+            aligned_abundances[complex] *= large_complex_boost
+            loc_ab_corr = large_complex_correlation
             average_abundance = np.mean(aligned_abundances[complex])
             aligned_abundances[complex] = aligned_abundances[complex]*(1 - loc_ab_corr) +\
                                         average_abundance*loc_ab_corr
@@ -363,7 +367,7 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
     plt.ylabel("Equivalent Diameter")
 
     means, stds, pre_buckets = core_sim_loop(base, total_partners,
-                                             abundance_correlation=0.7)
+                                             abundance_correlation=base_abundance_correlation)
 
     interp_prediction = interp1d(arr_base, corrfactor*np.cbrt(means), kind='cubic')
 
@@ -423,8 +427,15 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
     euploid_means = euploid_means/normalizer_1
     aneuploid_means = aneuploid_means/normalizer_1
 
-    print "simulations medians ratio: 1:%f" % (np.median(aneuploid_means)/np.median(euploid_means))
-    print "true medians ratio: 1:%f" % (np.median(true_aneuploid_op)/np.median(true_euploids_op))
+    plt.suptitle("large complex boost: x%.2f; large complex corr: %.2f, overall corr: %.2f\n"
+                 "simulations medians ratio: 1:%.2f |"
+                 " true medians ratio: 1:%.2f" % (large_complex_boost,
+                                               large_complex_correlation,
+                                               base_abundance_correlation,
+                 np.median(aneuploid_means)/np.median(euploid_means),
+                 np.median(true_aneuploid_op)/np.median(true_euploids_op)))
+    # print "simulations medians ratio: 1:%f" % (np.median(aneuploid_means)/np.median(euploid_means))
+    # print "true medians ratio: 1:%f" % (np.median(true_aneuploid_op)/np.median(true_euploids_op))
 
     vibration = 0.05*(2*np.random.rand(len(euploid_means))-1)
     plt.plot(1+vibration, euploid_means, 'ko')
@@ -471,9 +482,9 @@ if __name__ == "__main__":
     ## Swipe for the abundance correlation swipe
     ################################################################################################
 
-    corr_vars = np.linspace(0.5, 0.9, 5)
-    kwargs = {'abundance_correlation': None, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': 1}
-    diameter_plot_array(kwargs, corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)', 8, 15, 8)
+    # corr_vars = np.linspace(0.5, 0.9, 5)
+    # kwargs = {'abundance_correlation': None, 'repeats': 20, 'buckets': [5, 13], 'alpha': 1, 'ideality_correction': 1}
+    # diameter_plot_array(kwargs, corr_vars, corr_vars*100, 0, 0, 'complex abundance corr. (%)', 8, 15, 8)
 
     # corr_vars = np.linspace(0.15, 0.95, 5)
     # kwargs = {'abundance_correlation': 0.7, 'repeats': 20, 'buckets': [5, 13], 'alpha': None, 'ideality_correction': 1}
