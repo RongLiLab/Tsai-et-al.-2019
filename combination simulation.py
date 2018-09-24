@@ -30,9 +30,8 @@ alpha_factor = 1.0
 
 deviation_from_ideality = 1.0
 
-large_complex_boost = 150
-large_complex_correlation = 0.95
-base_abundance_correlation = 0.85
+large_complex_boost = 1
+large_complex_correlation = 0.85
 
 # plt.title('Complex Size distribution')
 # data = np.array(total_partners)
@@ -53,7 +52,7 @@ base_abundance_correlation = 0.85
 total_partners = total_partners_old
 
 # print total_partners
-print np.any(np.array(total_partners) == 0)
+# print np.any(np.array(total_partners) == 0)
 
 abundance_range = np.random.permutation(abundance_range)
 
@@ -136,11 +135,11 @@ def align_complex_abundances(complex_contents, abundance_correlation=0.7):
 
     # Manual large, abundant complex injection:
     sorted_abundances = np.sort(abundance_range)
-    print sorted_abundances
-    print len(complex_contents[-1])
+    # print sorted_abundances
+    # print len(complex_contents[-1])
     average_abundance = np.mean(sorted_abundances[complex_contents[-1]])
     min_abundance = np.min(sorted_abundances[complex_contents[-1]])
-    print average_abundance, min_abundance
+    # print average_abundance, min_abundance
     aligned_abundances[complex_contents[-1]] = sorted_abundances[complex_contents[-1]]*(1-abundance_correlation) +\
                                                 average_abundance*abundance_correlation
 
@@ -342,10 +341,10 @@ def diameter_plot_array(defautlt_params, base_array,
 
     # and y-axis here needs to be adjusted dynamically as well
     plt.axis([0.95, 2.05, y_min, y_max])
-    plt.show()
+    # plt.show()
 
 
-def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
+def get_osmotic_pressure(y_min=8, y_max=18, yticks=8, base_abundance_correlation=0.7):
 
     plt.title('Cell diameter vs ploidy')
 
@@ -399,7 +398,7 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
     for value in undervolume:
         alpha = 1 - (1 - alpha_0)/value
         pressure = -8.314*293./18.03e-3*np.log(alpha)
-        print value, alpha, pressure, pressure/0.05e6
+        # print value, alpha, pressure, pressure/0.05e6
         if not np.isnan(pressure):
             press.append(pressure)
 
@@ -437,35 +436,40 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8):
     # print "simulations medians ratio: 1:%f" % (np.median(aneuploid_means)/np.median(euploid_means))
     # print "true medians ratio: 1:%f" % (np.median(true_aneuploid_op)/np.median(true_euploids_op))
 
+    bplot1 = plt.boxplot([euploid_means, aneuploid_means],
+                         patch_artist=True
+                         )
+
+    colors = ['lightblue', 'pink']
+    for bplot in [bplot1]:
+        for patch, color in zip(bplot['boxes'], colors):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+
     vibration = 0.05*(2*np.random.rand(len(euploid_means))-1)
     plt.plot(1+vibration, euploid_means, 'ko')
     vibration = 0.05*(2*np.random.rand(len(aneuploid_means))-1)
     plt.plot(2+vibration, aneuploid_means, 'ko')
 
-    vibration = 0.05 * (2 * np.random.rand(len(true_euploids_op)) - 1)
-    plt.plot(3 + vibration, true_euploids_op, 'ko')
-    vibration = 0.05 * (2 * np.random.rand(len(true_aneuploid_op)) - 1)
-    plt.plot(4 + vibration, true_aneuploid_op, 'ko')
+    print euploid_means
 
-    bplot1 = plt.boxplot([euploid_means, aneuploid_means, true_euploids_op, true_aneuploid_op],
-                         patch_artist=True
-                         )
+    print aneuploid_means
 
-    colors = ['lightblue', 'pink', 'lightblue', 'pink']
-    for bplot in [bplot1]:
-        for patch, color in zip(bplot['boxes'], colors):
-            patch.set_facecolor(color)
+    # vibration = 0.05 * (2 * np.random.rand(len(true_euploids_op)) - 1)
+    # plt.plot(3 + vibration, true_euploids_op, 'ko')
+    # vibration = 0.05 * (2 * np.random.rand(len(true_aneuploid_op)) - 1)
+    # plt.plot(4 + vibration, true_aneuploid_op, 'ko')
 
 
     plt.ylabel('Turgor pressure\nrelative to the euploid median')
 
     # add x-tick labels
-    plt.xticks([y + 1 for y in range(4)], ['simulated\neuploid\nturgor',
-                                           'simulated\naneuploid\nturgor',
-                                           'measured\neuploid\nturgor',
-                                           'measured\naneuploid\nturgor'])
+    plt.xticks([y + 1 for y in range(2)], ['simulated\neuploid\nturgor',
+                                           'simulated\naneuploid\nturgor'])
 
     plt.show()
+
+    print np.median(aneuploid_means)/np.median(euploid_means)
 
 
 if __name__ == "__main__":
@@ -476,7 +480,7 @@ if __name__ == "__main__":
 
     # plt.figure(num=None, figsize=(5, 6), dpi=300, facecolor='w', edgecolor='k')
 
-    get_osmotic_pressure()
+    get_osmotic_pressure(base_abundance_correlation=0.85)
 
     ################################################################################################
     ## Swipe for the abundance correlation swipe
