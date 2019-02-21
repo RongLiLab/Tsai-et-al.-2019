@@ -30,7 +30,7 @@ alpha_factor = 1.0
 
 deviation_from_ideality = 1.0
 
-large_complex_boost = 1
+large_complex_boost = 20
 large_complex_correlation = 0.85
 
 # plt.title('Complex Size distribution')
@@ -243,10 +243,10 @@ def diameter_plot_array(defautlt_params, base_array,
     ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
     ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
 
-    plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
-    base_yticks_array = np.linspace(y_min, y_max, yticks)
-    base_yticks_array_names = [int(val) if i % 2 == 0 else '' for i, val in enumerate(base_yticks_array)]
-    plt.yticks(base_yticks_array, base_yticks_array_names)
+    # plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+    # base_yticks_array = np.linspace(y_min, y_max, yticks)
+    # base_yticks_array_names = [int(val) if i % 2 == 0 else '' for i, val in enumerate(base_yticks_array)]
+    # plt.yticks(base_yticks_array, base_yticks_array_names)
 
     plt.xlabel("Ploidy")
     plt.ylabel("Equivalent Diameter")
@@ -357,10 +357,10 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8, base_abundance_correlation
     ax.yaxis.grid(color='gray', linestyle='solid', alpha=0.5)
     ax.xaxis.grid(color='gray', linestyle='solid', alpha=0.5)
 
-    plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
-    base_yticks_array = np.linspace(y_min, y_max, yticks)
-    base_yticks_array_names = [int(val) if i % 2 == 0 else '' for i, val in enumerate(base_yticks_array)]
-    plt.yticks(base_yticks_array, base_yticks_array_names)
+    # plt.xticks(np.linspace(1, 2, 9), ['1.00', '', '1.25', '', '1.50', '', '1.75', '', '2.00'])
+    # base_yticks_array = np.linspace(y_min, y_max, yticks-1)
+    # base_yticks_array_names = [int(val) if i % 2 == 0 else '' for i, val in enumerate(base_yticks_array)]
+    # plt.yticks(base_yticks_array, base_yticks_array_names)
 
     plt.xlabel("Ploidy")
     plt.ylabel("Equivalent Diameter")
@@ -405,7 +405,7 @@ def get_osmotic_pressure(y_min=8, y_max=18, yticks=8, base_abundance_correlation
     press = np.array(press)
 
     aneuploid_means = press[1:-1]
-    euploid_means = press[[0, -1],]
+    euploid_means = press[[0, -1], ]
 
     # print alpha_0, alpha_0*undervolume, -8.314*293./18.03e-3*np.log(undervolume)
 
